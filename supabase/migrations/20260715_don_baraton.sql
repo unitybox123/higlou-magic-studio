@@ -1,3 +1,5 @@
+-- LEGACY: replaced by 20260715_db_products.sql (db_products).
+-- Drop with 20260716_drop_creative_engine.sql if this table still exists.
 -- Don Baraton marketplace listings (public storefront synced from Higlou products)
 
 create table if not exists public.don_baraton_listings (

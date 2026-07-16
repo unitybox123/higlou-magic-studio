@@ -1,3 +1,4 @@
+-- SUPERSEDED: Creative Engine removed. See 20260716_drop_creative_engine.sql
 -- Higlou AI Creative Engine — Phase 9 costs / budget / cache metrics
 
 alter table public.creative_packs
