@@ -1,0 +1,6 @@
+File: ebay-draft-listing-template.csv
+Source: eBay-draft-listing-template-jul-13-2026-17-38-6.csv
+Copied-At: 2026-07-13
+SHA256: E8840560B3359BAB0825F1BEE48DAD3F4C58D6AF9BC2B412630FB928C4793C3A
+Bytes: 924
+Notes: Exact byte-for-byte copy of the official eBay Create New Drafts template. Do not normalize, reformat, or rewrite the first #INFO line — Seller Hub rejects unidentified templates.

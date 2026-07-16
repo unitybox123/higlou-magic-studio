@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="Good full product">
+  <rect width="640" height="480" fill="#f3f4f6"/>
+  <rect x="220" y="80" width="200" height="320" rx="16" fill="#1f2937"/>
+  <rect x="250" y="120" width="140" height="80" rx="8" fill="#9ca3af"/>
+  <text x="320" y="440" text-anchor="middle" font-family="system-ui,sans-serif" font-size="18" fill="#065f46">Full product · centered</text>
+</svg>

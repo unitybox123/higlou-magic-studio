@@ -1,0 +1,7 @@
+File: ebay-create-listing-template.csv
+Purpose: Higlou publish-ready Create/Schedule CSV (shipping, weight, location, handling)
+SHA256: 150C7C5A5B51DB7874FB299F3D5F152CDB3E0D4C633F875A2292AB13450663A5
+Notes:
+- eBay "Create drafts" uploads IGNORE shipping / package weight / item location columns.
+- Upload this export in Seller Hub > Reports > Upload as "Create or Schedule new listings".
+- Action value is Add. Duration GTC. PostalCode 46947 (Logansport, IN). Flat + USPSGroundAdvantage when no Shipping profile name.

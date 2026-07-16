@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# Marketplace lives in its own repo (MARKET-PLACE-OUTLET) — never ship here
+/don-baraton/
+
 # production
 /build
 
@@ -32,6 +35,21 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# Secrets / local dumps — never commit
+**/api key*.txt
+**/*api*key*.txt
+/tmp/
+.engram/
+eBay-*.csv
+
+# Google Cloud Service Account credential files (never commit)
+**/service-account*.json
+**/*-service-account.json
+**/clever-reserve*.json
+**/google-vision*.json
+**/gcp-*.json
 
 # vercel
 .vercel

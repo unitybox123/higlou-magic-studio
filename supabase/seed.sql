@@ -1,0 +1,6 @@
+-- Development seed notes:
+-- 1. Create the admin user manually in Supabase Auth (Authentication → Users → Add user).
+-- 2. Insert a profile row:
+-- insert into public.users (id, email, full_name)
+-- values ('<auth-user-uuid>', 'admin@higlou.store', 'Higlou Admin');
+-- 3. Store branding and policies are created per-user on first Settings save.

@@ -1,0 +1,972 @@
+HIGLOU
+AI Creative Engine
+Prompt maestro y plan técnico completo para Cursor
+
+
+Documento preparado para desarrollo disciplinado, por fases y sin improvisaciones.
+
+Cómo usar este documento
+Abre el repositorio completo de tu plataforma en Cursor.
+Copia desde la sección “PROMPT MAESTRO PARA CURSOR” hasta el final y pégalo en el chat del agente.
+No permitas que Cursor implemente todo de una vez: debe comenzar con la auditoría y crear docs/higlou-creative-engine-plan.md.
+Revisa y aprueba cada fase antes de continuar a la siguiente.
+Conserva este documento como especificación oficial del módulo creativo.
+Resultado esperado: subes las fotos del producto una sola vez y Higlou crea automáticamente la portada en fondo blanco, vistas reales, producto en el empaque, producto fuera del empaque, producto ordenado, acercamientos, escenas de uso, lifestyle, características y medidas verificadas.
+
+PROMPT MAESTRO PARA CURSOR
+Copia todo el contenido de esta sección. Cursor debe tratarlo como una especificación obligatoria, no como una sugerencia.
+ACTÚA COMO ARQUITECTO DE SOFTWARE SENIOR, INGENIERO DE IA, ESPECIALISTA EN PROCESAMIENTO DE IMÁGENES, PRODUCT MANAGER Y EXPERTO EN MARKETPLACES.
+
+Debes integrar dentro de mi plataforma existente un sistema profesional llamado:
+
+HIGLOU AI CREATIVE ENGINE
+
+No quiero una demostración, un mockup ni una colección de prompts sueltos.
+
+Quiero un sistema real, modular, seguro, rentable, escalable y preparado para producción, que transforme fotografías reales de un producto en un carrusel completo de imágenes profesionales para eBay y otros marketplaces.
+
+1. REGLA INICIAL: NO EMPIECES A PROGRAMAR A CIEGAS
+
+Antes de modificar código:
+
+1. Inspecciona todo el repositorio.
+2. Identifica:
+   - Framework del frontend.
+   - Framework del backend.
+   - Lenguaje principal.
+   - Base de datos.
+   - ORM.
+   - Sistema de autenticación.
+   - Sistema de almacenamiento de archivos.
+   - Sistema actual de análisis de imágenes.
+   - Integración actual con OpenAI o Google Vision.
+   - Flujo actual para crear drafts de eBay.
+   - Sistema de jobs, colas o tareas en segundo plano.
+   - Estructura de carpetas.
+   - Variables de entorno.
+   - Convenciones de código.
+   - Componentes reutilizables.
+3. No reemplaces tecnologías existentes sin una razón sólida.
+4. No dupliques funciones que ya existan.
+5. No rompas el flujo actual de generación de drafts.
+6. No inventes nombres de archivos, endpoints, tablas o funciones antes de revisar el proyecto.
+7. Si falta información técnica crítica, detente y pregúntame.
+8. Antes de implementar, crea un documento:
+   docs/higlou-creative-engine-plan.md
+
+Ese documento debe contener:
+
+Arquitectura encontrada.
+Arquitectura propuesta.
+Archivos que serán creados.
+Archivos que serán modificados.
+Nuevas tablas.
+Nuevos endpoints.
+Nuevos servicios.
+Proveedores externos.
+Costos estimados por operación.
+Riesgos.
+Plan por fases.
+Criterios de aceptación.
+
+Primero presenta ese plan. Después implementa fase por fase.
+
+2. VISIÓN DEL PRODUCTO
+
+El usuario debe hacer únicamente esto:
+
+1. Abrir un producto existente o crear uno nuevo.
+2. Subir varias fotografías reales.
+3. Presionar: GENERATE CREATIVE PACK.
+4. Esperar mientras el sistema procesa el producto.
+5. Recibir automáticamente un carrusel completo de imágenes.
+6. Revisar cada imagen.
+7. Aprobar, regenerar, reemplazar o eliminar imágenes individuales.
+8. Seleccionar cuáles imágenes enviar al draft de eBay.
+
+El usuario no debe escribir prompts ni explicar repetidamente:
+
+Haz el fondo blanco.
+Centra el producto.
+Haz la parte trasera.
+Muéstralo fuera del empaque.
+Acércate al material.
+Organiza las piezas.
+Muéstralo siendo utilizado.
+Crea otra escena.
+Crea una imagen con características.
+
+Toda esa lógica debe vivir dentro del motor de Higlou.
+
+3. OBJETIVO DEL SISTEMA
+
+A partir de fotografías reales, Higlou debe:
+
+1. Recibir y normalizar las imágenes.
+2. Revisar su calidad antes de gastar dinero.
+3. Detectar duplicados.
+4. Clasificar cada fotografía.
+5. Analizar el producto una sola vez.
+6. Construir una fuente central de verdad.
+7. Determinar qué creativos son seguros.
+8. Bloquear creativos que requieran inventar detalles.
+9. Crear automáticamente el plan del carrusel.
+10. Seleccionar el método más económico para cada imagen.
+11. Generar o editar cada creativo.
+12. Validar fidelidad, calidad y composición.
+13. Reintentar solamente la tarea fallida.
+14. Ordenar el carrusel.
+15. Guardar resultados y costos.
+16. Reutilizar análisis y resultados cuando sea posible.
+17. Entregar imágenes listas para eBay.
+
+4. PRINCIPIOS INQUEBRANTABLES
+
+El sistema nunca debe:
+
+1. Cambiar la marca real.
+2. Alterar un logotipo.
+3. Inventar un modelo.
+4. Cambiar el color real.
+5. Cambiar el patrón.
+6. Cambiar costuras.
+7. Añadir botones, cierres, puertos o accesorios.
+8. Eliminar defectos reales de productos usados.
+9. Convertir visualmente un producto usado en uno nuevo.
+10. Inventar una vista trasera no fotografiada.
+11. Inventar un producto fuera del empaque si nunca fue mostrado.
+12. Inventar medidas.
+13. Inventar materiales.
+14. Inventar características.
+15. Crear texto comercial no verificado.
+16. Utilizar una imagen generada como evidencia factual.
+17. Volver a analizar imágenes sin necesidad.
+18. Regenerar todo el carrusel porque una imagen falló.
+19. Enviar originales a múltiples proveedores sin necesidad.
+20. Publicar automáticamente imágenes no aprobadas.
+
+REGLA CENTRAL:
+LA FIDELIDAD AL PRODUCTO REAL ES MÁS IMPORTANTE QUE LA CREATIVIDAD.
+
+5. ARQUITECTURA GENERAL
+
+Implementa esta arquitectura modular:
+
+Product Workspace
+        ↓
+Image Intake Manager
+        ↓
+Local Image Preprocessor
+        ↓
+Input Quality Analyzer
+        ↓
+Image Role Classifier
+        ↓
+Reference Selector
+        ↓
+Product Vision Analyzer
+        ↓
+Product Truth Record
+        ↓
+Creative Safety Engine
+        ↓
+Creative Carousel Planner
+        ↓
+Creative Recipe Engine
+        ↓
+Provider Router
+        ↓
+Processing and Generation Workers
+        ↓
+Quality Assurance Engine
+        ↓
+Fidelity Validator
+        ↓
+Retry Controller
+        ↓
+Carousel Organizer
+        ↓
+Human Approval
+        ↓
+eBay Draft Integration
+
+No concentres toda la lógica en un solo servicio.
+Usa interfaces y adaptadores para que los proveedores externos puedan cambiarse.
+
+6. MÓDULOS OBLIGATORIOS
+
+Crear módulos claramente separados:
+
+1. Image Intake Manager
+2. Image Preprocessor
+3. Input Quality Analyzer
+4. Duplicate Detector
+5. Image Role Classifier
+6. Reference Selector
+7. Product Vision Analyzer
+8. Product Truth Record Service
+9. Creative Safety Engine
+10. Creative Planner
+11. Creative Recipe Engine
+12. Instruction Compiler
+13. Provider Router
+14. Background Removal Provider
+15. Image Editing Provider
+16. Image Generation Provider
+17. Upscale Provider
+18. Validation Provider
+19. Job Queue
+20. Retry Controller
+21. Cost Controller
+22. Cache Manager
+23. Creative Pack Service
+24. Approval Service
+25. Audit Log Service
+26. Usage Analytics
+27. eBay Asset Exporter
+
+Cada módulo debe tener interfaz, implementación, tipos, validación, manejo de errores, logs y pruebas.
+
+7. FLUJO DE CARGA
+
+La interfaz debe permitir:
+
+Arrastrar y soltar.
+Seleccionar varias imágenes.
+Subir desde teléfono.
+Tomar fotografías desde dispositivo móvil.
+JPG, JPEG, PNG, WEBP y HEIC.
+Reordenar, eliminar, reemplazar y agregar posteriormente.
+Visualizar miniaturas.
+Marcar manualmente el rol.
+Ver alertas de calidad.
+Ver progreso de procesamiento.
+
+Cada imagen debe guardar:
+
+ID, Product ID y User ID.
+URL original, normalizada y miniatura.
+Hash SHA-256 y perceptual hash.
+MIME type, tamaño, ancho, alto y orientación.
+Fecha de creación y estado de procesamiento.
+Rol detectado y confianza.
+Quality score.
+Proveedor utilizado.
+Costo acumulado.
+
+8. PREPROCESAMIENTO ECONÓMICO
+
+Antes de usar una API de pago, realizar localmente:
+
+Corrección EXIF.
+Conversión HEIC.
+Conversión a sRGB.
+Compresión inteligente.
+Creación de miniaturas.
+Eliminación de metadatos innecesarios.
+SHA-256 y perceptual hash.
+Detección de duplicados exactos y visuales.
+Medición de nitidez, exposición y contraste.
+Detección de sobreexposición y subexposición.
+Detección de resolución insuficiente.
+Medición de espacio alrededor del producto.
+Detección aproximada de producto cortado.
+
+Usa procesamiento local con librerías compatibles con el proyecto. No uses un modelo generativo para tareas que puedan resolverse con código.
+
+9. INPUT QUALITY SCORE
+
+Asignar una puntuación de entrada entre 0 y 100 considerando:
+
+Resolución.
+Nitidez.
+Iluminación.
+Visibilidad y cobertura completa del producto.
+Obstrucciones y reflejos.
+Perspectiva.
+Utilidad para recorte, reconocimiento y referencia generativa.
+
+Clasificación:
+
+90–100: Excellent
+75–89: Good
+60–74: Usable
+40–59: Limited
+0–39: Rejected
+
+Cuando falte información, mostrar mensajes concretos:
+
+Necesitamos una foto frontal.
+Necesitamos una foto de la parte trasera.
+Saca el producto del empaque.
+Fotografía los accesorios.
+Acércate al material.
+Fotografía el daño.
+Evita reflejos.
+Incluye todo el producto.
+Usa mejor iluminación.
+
+No gastar en generación cuando faltan referencias indispensables.
+
+10. CLASIFICACIÓN DE LAS FOTOGRAFÍAS
+
+Clasificar cada imagen como:
+
+Front, Back, Left side, Right side, Top, Bottom, Inside packaging, Outside packaging, Folded, Unfolded, Ordered arrangement, Accessories, Material, Texture, Stitching, Label, Barcode, Model, Serial number, Damage, Dimensions, Product in use, Lifestyle reference, Duplicate o Irrelevant.
+
+Guardar rol principal, roles secundarios, confianza, razón y corrección manual.
+
+11. ANÁLISIS PRINCIPAL DEL PRODUCTO
+
+Realizar una única llamada de visión principal por versión del conjunto de referencias.
+No enviar automáticamente todas las imágenes. Seleccionar las mejores según calidad, diversidad, rol, cobertura, nitidez, legibilidad y ausencia de duplicados.
+
+La respuesta debe ser JSON estricto validado por schema, con campos para product_type, category_family, condition, brand, model, colors, materials, pattern, visible_features, visible_accessories, visible_text, visible_defects, package_present, product_visible_outside_package, vistas disponibles, use_case, safe_creative_types, blocked_creative_types, missing_references y uncertain_observations.
+
+Reglas del analizador:
+
+Utilizar null cuando no exista certeza.
+No completar campos por intuición.
+Cada dato importante debe incluir evidence_image_ids.
+Mantener separadas observaciones confirmadas e inciertas.
+Validar siempre el schema.
+Si falla, reparar una sola vez.
+Si vuelve a fallar, marcar error y no continuar silenciosamente.
+
+12. PRODUCT TRUTH RECORD
+
+Crear una entidad central denominada Product Truth Record.
+
+Debe contener información confirmada e incierta, referencias originales, roles, scores, colores, patrones, texturas, logos, etiquetas, accesorios, defectos, estado del empaque, vistas disponibles, restricciones, correcciones del usuario e historial de versiones.
+
+Todos los módulos posteriores deben consumir esta entidad.
+Una imagen generada nunca puede convertirse automáticamente en evidencia.
+
+13. CREATIVE SAFETY ENGINE
+
+Clasificar cada creativo en:
+
+A. REAL_EDIT
+Editar una fotografía real sin reconstruir el producto: fondo blanco, centrado, iluminación, eliminación del fondo, sombra, recorte, perspectiva y mejora moderada.
+
+B. REAL_PRODUCT_COMPOSITE
+Recortar el producto real y colocarlo dentro de una escena: mesa, habitación, cocina, escritorio o composición ordenada.
+
+C. CONTROLLED_GENERATION
+Generación asistida usando múltiples referencias reales: producto siendo utilizado, variaciones de escena, ángulos comerciales o presentación del conjunto.
+
+D. BLOCKED
+No existe evidencia suficiente: parte trasera no fotografiada, producto fuera del empaque sin referencia, interior no visible, accesorios no confirmados o medidas no verificadas.
+
+Orden obligatorio:
+1. REAL_EDIT.
+2. REAL_PRODUCT_COMPOSITE.
+3. CONTROLLED_GENERATION.
+4. BLOCKED si no es seguro.
+
+14. CARRUSEL AUTOMÁTICO DE EBAY
+
+El sistema debe crear un carrusel adaptado al producto. Para un juego de cama, el resultado ideal será:
+
+1. PORTADA PRINCIPAL
+Fondo blanco puro #FFFFFF.
+Producto completo, frontal y perfectamente centrado.
+Alta nitidez, colores reales y sombra suave.
+Sin texto, decoración ni objetos externos.
+Formato cuadrado y primera posición.
+
+2. PARTE TRASERA
+Fondo blanco puro.
+Basada en fotografía trasera real.
+No inventarla si no existe referencia.
+Centrada y con escala coherente.
+
+3. VISTA LATERAL O ÁNGULO ADICIONAL
+Fondo blanco.
+Ángulo comercial realista.
+Conservar forma y proporciones.
+
+4. PRODUCTO FUERA DEL EMPAQUE
+Producto real fuera del empaque.
+Ordenado, limpio, comercial y sobre fondo blanco.
+No inventarlo si solo existe una caja cerrada; solicitar foto real.
+
+5. PRODUCTO EN EL EMPAQUE
+Obligatoria cuando el producto tiene empaque.
+Usar la foto real del producto dentro de su empaque.
+Fondo blanco premium.
+Conservar exactamente marca, texto, etiqueta, color, forma, cierre y código visible.
+No modificar información del empaque.
+Centrar y corregir perspectiva moderadamente.
+
+6. PRODUCTO ORDENADO
+Mostrar todas las piezas confirmadas organizadas de forma atractiva.
+Fondo blanco y composición equilibrada.
+No duplicar piezas ni inventar componentes.
+Aspecto de fotografía de catálogo.
+
+7. ACERCAMIENTO AL MATERIAL
+Macro profesional de textura, tejido, acolchado o superficie.
+Usar una referencia real.
+No inventar textura y mantener el color real.
+
+8. DETALLE DE BORDADO, COSTURA O ACABADO
+Acercamiento específico a detalles reales.
+No crear bordados ni modificar patrones.
+
+9. ACCESORIOS O PIEZAS INCLUIDAS
+Mostrar solo elementos confirmados.
+Ordenados sobre fondo blanco o neutral.
+No incluir decoración que parezca incluida.
+
+10. PRODUCTO SIENDO USADO
+Mostrar el producto en su contexto natural.
+Ropa de cama: instalado en una cama.
+Herramientas: uso seguro.
+Electrodomésticos: cocina.
+Electrónica: escritorio moderno.
+El producto debe ser protagonista y mantener su diseño.
+
+11. LIFESTYLE SECUNDARIO
+Segunda escena distinta y diferente encuadre.
+Ambiente premium, pocos elementos decorativos y sin texto.
+
+12. VISTA CERCANA EN USO
+Acercamiento del producto dentro de la escena.
+Mostrar material o acabado en contexto, preservando fidelidad.
+
+13. CARACTERÍSTICAS VERIFICADAS
+Crear mediante código, no generando texto dentro de una imagen de IA.
+Usar plantilla propia, iconos consistentes y solo datos confirmados.
+
+14. MEDIDAS
+Solo si están verificadas.
+Renderizar mediante código con líneas, flechas y etiquetas legibles.
+Si no existen medidas, ocultar la tarjeta.
+
+15. DEFECTOS REALES
+Para productos usados.
+Mostrar rayones, manchas, golpes o desgaste.
+No ocultarlos.
+Usar foto real y descripción neutral.
+
+El planner debe seleccionar normalmente entre 6 y 12 imágenes según categoría, referencias, valor, condición, empaque, complejidad, presupuesto y marketplace.
+
+15. WHITE BACKGROUND ENGINE
+
+La portada y vistas principales deben pasar por un motor especializado. No basta con decir “haz fondo blanco”.
+
+Proceso:
+
+1. Detectar el producto.
+2. Crear y refinar la máscara.
+3. Preservar transparencias importantes.
+4. Eliminar fondo y limpiar bordes contaminados.
+5. Crear lienzo cuadrado.
+6. Aplicar fondo #FFFFFF.
+7. Calcular escala y centrar.
+8. Mantener márgenes uniformes.
+9. Añadir sombra de contacto suave.
+10. Ajustar exposición y balance de blancos.
+11. Aplicar nitidez moderada.
+12. Exportar y validar.
+
+Reglas:
+
+Fondo RGB 255,255,255.
+Producto ocupando aproximadamente 78–88% del área útil.
+Margen seguro mínimo.
+Sin recortes, halo ni bordes dentados.
+Sin sombra flotante, reflejos inventados, texto agregado o marca de agua.
+La imagen principal siempre debe usar este motor.
+
+16. HIGLOU CREATIVE DNA
+
+Crear una configuración versionada con:
+
+Clean marketplace photography.
+White background for core assets.
+Neutral color temperature.
+Natural saturation.
+High clarity and moderate contrast.
+Soft contact shadows.
+Product-centered composition.
+Consistent margins.
+No unnecessary props.
+No dramatic filters.
+No fantasy styling.
+No watermarks.
+No promotional badges or text on the main image.
+Premium, modern and trustworthy.
+
+Guardar como higlou_creative_dna_v1 y no dispersar estas reglas por el código.
+
+17. CREATIVE RECIPE ENGINE
+
+Cada tipo de imagen debe usar una receta estructurada y versionada con:
+
+ID y tipo de creativo.
+Processing mode.
+Roles requeridos y opcionales.
+Aspect ratio y resolución.
+Fondo.
+Porcentaje mínimo y máximo de ocupación.
+Alineación y sombra.
+Elementos a preservar.
+Cambios prohibidos.
+Umbral de calidad.
+Máximo de intentos.
+
+Crear recetas para todos los tipos del carrusel. Deben vivir en base de datos o configuración central versionada, nunca dentro de componentes visuales.
+
+18. INSTRUCTION COMPILER
+
+No uses prompts libres dispersos.
+
+Crear un compilador que utilice Product Truth Record, Creative Recipe, Creative DNA, imágenes seleccionadas, restricciones, condición, marketplace y errores anteriores.
+
+La instrucción compilada debe separar:
+
+1. Source references.
+2. Elements to preserve.
+3. Authorized transformation.
+4. Forbidden modifications.
+5. Composition.
+6. Lighting.
+7. Background or scene.
+8. Output format.
+9. Validation requirements.
+
+Guardar versión de receta, compilador, instrucción enviada, proveedor, modelo, resultado, costo y duración.
+
+19. ROUTER DE PROVEEDORES
+
+Crear interfaces:
+
+VisionProvider
+BackgroundRemovalProvider
+ImageEditProvider
+ImageGenerationProvider
+UpscaleProvider
+ValidationProvider
+OCRProvider
+
+El frontend nunca debe llamar directamente a OpenAI.
+
+El router debe decidir según tipo de tarea, fidelidad, costo, calidad, disponibilidad, presupuesto e historial de éxito.
+
+Usar:
+
+Procesamiento local para métricas, canvas, fondo blanco, redimensionamiento y composiciones simples.
+Una llamada visual para análisis principal.
+Edición compleja solo cuando sea necesaria.
+Generación para lifestyle controlado.
+Código local para infografías, texto, medidas e iconos.
+Validación local más visión económica cuando sea necesario.
+
+20. SISTEMA DE AHORRO
+
+Implementar:
+
+A. HASH Y DEDUPLICACIÓN
+No procesar dos veces un archivo idéntico.
+Reutilizar resultados con SHA-256.
+Detectar duplicados visuales con perceptual hash.
+
+B. ANÁLISIS ÚNICO
+Un análisis principal por conjunto de referencias.
+Crear analysis_input_hash.
+Solo repetir si cambian imágenes relevantes.
+
+C. MINIATURAS PARA VISIÓN
+No enviar originales gigantes para clasificación.
+Usar versiones optimizadas y originales solo para edición final.
+
+D. CACHE POR ETAPA
+Preprocessing, quality, roles, product analysis, masks, plan, instructions, assets y validation.
+
+E. REGENERACIÓN SELECTIVA
+Si falla una imagen, regenerar únicamente esa.
+
+F. VARIACIONES LIMITADAS
+Una versión inicial por creativo.
+Variaciones adicionales solo bajo solicitud.
+
+G. PRIORIDAD A CÓDIGO LOCAL
+Fondo blanco, canvas, centrado, sombras, redimensionamiento, infografías, texto, medidas, iconos, marcos y composición simple.
+
+H. PRESUPUESTOS
+Máximo por producto, diario y mensual.
+Alertas al 70% y 90%.
+Bloqueo al 100% salvo administrador.
+
+I. MODOS
+ECONOMY: aproximadamente 5 imágenes y una sola generativa.
+STANDARD: 7–9 imágenes y una o dos generativas.
+PREMIUM: 10–12 imágenes y validación más estricta.
+
+J. ESTIMACIÓN PREVIA
+Mostrar imágenes planeadas, llamadas, procesamiento local y costo estimado antes de generar.
+
+21. COLA DE TRABAJOS
+
+La generación no debe depender de una petición HTTP larga.
+Cada creativo debe ser un job independiente.
+
+Estados:
+
+DRAFT, WAITING_FOR_INPUT, PLANNED, QUEUED, PROCESSING, VALIDATING, PASSED, FAILED, BLOCKED, NEEDS_REVIEW, APPROVED, REJECTED y CANCELLED.
+
+Requisitos:
+
+Idempotencia.
+Reintentos y backoff exponencial.
+Timeout y dead-letter handling.
+Control de concurrencia y rate limiting.
+Cancelación, resume y progress events.
+
+22. VALIDACIÓN AUTOMÁTICA
+
+Cada creativo debe validarse antes de mostrarse como listo.
+
+Validaciones locales:
+
+Resolución, relación de aspecto, corrupción, fondo blanco, bordes, recorte, márgenes, escala, desenfoque, texto inesperado, marca de agua y duplicados.
+
+Validaciones visuales:
+
+Similaridad con referencias.
+Fidelidad de color, forma, logos y patrón.
+Cantidad de piezas y accesorios.
+Defectos.
+Coherencia con Product Truth Record.
+
+Scores:
+
+Technical score.
+Fidelity score.
+Composition score.
+Marketplace score.
+Overall score.
+
+Umbrales iniciales:
+
+Portada: 92.
+Real edit: 90.
+Lifestyle: 85.
+Infografía: 95 en exactitud y legibilidad.
+
+Resultado: PASS, RETRY, NEEDS_REVIEW o REJECT.
+
+23. RETRY CONTROLLER
+
+Máximo normal: 2 intentos automáticos por creativo.
+No repetir exactamente la misma llamada.
+
+Analizar el fallo y ajustar solo lo necesario:
+
+Producto cortado: reducir escala.
+Fondo no blanco: corregir localmente.
+Color cambiado: reforzar preservación y referencia principal.
+Accesorio inventado: bloquear generación y usar composición real.
+Texto deformado: usar fotografía real del empaque o renderizar texto por código.
+
+Después de dos fallos: NEEDS_REVIEW y detener consumo automático.
+
+24. BASE DE DATOS
+
+Diseñar modelos adaptados al ORM existente.
+
+Entidades mínimas:
+
+creative_projects
+product_reference_images
+image_quality_reports
+image_role_predictions
+product_truth_records
+product_truth_versions
+creative_plans
+creative_tasks
+creative_recipes
+creative_assets
+creative_validations
+provider_requests
+usage_events
+cost_events
+generation_attempts
+approval_events
+audit_logs
+
+Campos importantes:
+
+IDs, tenant/user, product, status, version, input hash, recipe version, provider, model, cost, duration, failure reason, timestamps y aprobación.
+
+Agregar índices y constraints. No almacenar secretos.
+
+25. API
+
+Crear endpoints o acciones equivalentes:
+
+POST /creative-projects
+POST /creative-projects/:id/images
+POST /creative-projects/:id/analyze
+POST /creative-projects/:id/plan
+POST /creative-projects/:id/generate
+GET  /creative-projects/:id
+GET  /creative-projects/:id/progress
+POST /creative-tasks/:id/regenerate
+POST /creative-assets/:id/approve
+POST /creative-assets/:id/reject
+POST /creative-assets/:id/set-primary
+POST /creative-assets/:id/replace
+DELETE /creative-assets/:id
+POST /creative-projects/:id/export-to-ebay
+GET  /creative-projects/:id/usage
+
+Adaptar nombres al proyecto y validar autorización en todos los endpoints.
+
+26. INTERFAZ
+
+Crear una experiencia premium, limpia y fácil con:
+
+A. REFERENCES
+Imágenes, roles, scores, alertas y botón para agregar fotos.
+
+B. PRODUCT UNDERSTANDING
+Tipo, marca, modelo, color, material, estado, accesorios, defectos y confianza.
+Campos editables por el usuario.
+
+C. CREATIVE PLAN
+Portada, trasera, lateral, fuera del empaque, en el empaque, ordenado, material, detalle, accesorios, en uso, lifestyle, características, medidas y defectos.
+Mostrar permitido, bloqueado, falta de referencia, método y costo.
+
+D. GENERATION PROGRESS
+Progreso general y por creativo.
+Actualización en tiempo real o polling eficiente.
+
+E. RESULTS
+Imagen, tipo, estado, score, método, costo, aprobar, regenerar, reemplazar, descargar, eliminar y marcar portada.
+
+F. CAROUSEL PREVIEW
+Orden exacto para eBay con drag and drop.
+
+27. INTEGRACIÓN CON EBAY
+
+Cuando el usuario apruebe el Creative Pack:
+
+1. Guardar assets aprobados.
+2. Mantener orden y portada.
+3. Asociarlos al producto existente.
+4. Incluirlos en el flujo de draft existente.
+5. No crear un segundo producto ni duplicar el draft.
+6. No publicar automáticamente sin confirmación.
+7. Conservar relación Product, Creative Project, eBay Draft y Assets.
+
+28. SEGURIDAD
+
+Implementar:
+
+Autorización por usuario o tenant.
+URLs firmadas.
+Validación real de MIME y límites de tamaño.
+Sanitización y protección contra nombres maliciosos.
+Rate limiting y protección contra abuso.
+Secretos solo en backend.
+Nunca exponer API keys al frontend.
+Logs sin claves ni contenido sensible innecesario.
+Política de eliminación y archivos temporales seguros.
+
+29. OBSERVABILIDAD
+
+Registrar Project ID, Product ID, Task ID, provider, model, recipe, attempt, duration, input/output size, cost, cache hit, error code y validation result.
+
+Crear dashboard interno con:
+
+Productos procesados.
+Imágenes generadas.
+Costo promedio por producto y creativo.
+Cache hit rate.
+Tasa de aprobación y reintentos.
+Fallos por proveedor.
+Tiempo promedio.
+Creativos más regenerados.
+
+30. PRUEBAS
+
+Crear unit, integration, schema, API, permission, queue, retry, cache, cost limit, image pipeline, snapshot e idempotency tests.
+
+Fixtures mínimas:
+
+1. Producto empacado con vista frontal.
+2. Frontal y trasera.
+3. Producto fuera del empaque.
+4. Producto usado con daños.
+5. Imágenes duplicadas.
+6. Imágenes deficientes.
+7. Producto sin medidas.
+8. Producto con accesorios.
+9. Producto sin referencia suficiente para lifestyle.
+10. Job fallido.
+
+31. IMPLEMENTACIÓN POR FASES
+
+No implementes todo de una vez.
+
+FASE 0 — AUDITORÍA
+Revisar proyecto.
+Crear documento del plan.
+Identificar dependencias.
+Proponer migraciones.
+Esperar aprobación.
+
+FASE 1 — FUNDACIÓN
+Modelos, upload, storage, preprocessing, hash, deduplicación, quality score y UI de referencias.
+
+FASE 2 — PRODUCT UNDERSTANDING
+Role classifier, reference selector, vision analyzer, Product Truth Record, corrección manual y cache.
+
+FASE 3 — WHITE BACKGROUND STUDIO
+Segmentación, fondo #FFFFFF, centrado, canvas, sombra, portada, empaque, parte trasera y validaciones.
+
+FASE 4 — PLANNER Y RECIPES
+Creative planner, Safety Engine, recipes, Creative DNA y estimación de costos.
+
+FASE 5 — CREATIVE GENERATION
+Producto ordenado, fuera del empaque, material, detalles, producto en uso, lifestyle y provider router.
+
+FASE 6 — INFOGRAPHICS
+Características, medidas, accesorios y defectos renderizados mediante código.
+
+FASE 7 — QA Y REINTENTOS
+Validadores, scores, similaridad, Retry Controller y revisión humana.
+
+FASE 8 — EBAY
+Carrusel, orden, selección, asociación al draft y exportación.
+
+FASE 9 — COSTOS Y ADMINISTRACIÓN
+Dashboard, límites, presupuestos, métricas y alertas.
+
+Después de cada fase:
+
+1. Ejecutar lint.
+2. Ejecutar typecheck.
+3. Ejecutar tests.
+4. Corregir errores.
+5. Documentar cambios.
+6. Mostrar resultado.
+7. Esperar aprobación antes de la siguiente fase.
+
+32. DEFINICIÓN DE TERMINADO
+
+El sistema no estará terminado hasta que:
+
+El usuario pueda subir fotos.
+Se detecten imágenes deficientes y duplicadas.
+El producto se analice una sola vez.
+Exista Product Truth Record.
+Se genere el plan del carrusel.
+Exista portada con fondo blanco puro.
+Exista imagen del producto en el empaque.
+Exista fuera del empaque cuando haya referencia.
+Exista producto ordenado.
+Existan acercamientos al material.
+Exista producto siendo utilizado y lifestyle.
+Existan características verificadas.
+Medidas solo cuando estén confirmadas.
+Defectos reales para productos usados.
+Cada resultado sea validado.
+Se pueda regenerar una sola imagen.
+Los costos sean visibles.
+El usuario pueda aprobar.
+El carrusel pueda enviarse al draft de eBay.
+Existan pruebas y documentación.
+No haya secretos expuestos, errores silenciosos ni mocks en producción.
+
+33. DISCIPLINA DE DESARROLLO
+
+Debes trabajar con estas reglas:
+
+1. No inventes.
+2. No supongas la arquitectura.
+3. No presentes placeholders como terminados.
+4. No uses datos falsos en producción.
+5. No dejes TODOs críticos.
+6. No ignores errores.
+7. No captures excepciones sin registrarlas.
+8. No hagas llamadas externas desde componentes visuales.
+9. No almacenes reglas importantes en prompts dispersos.
+10. No acoples el sistema a un único proveedor.
+11. No implementes generación antes de fidelidad y seguridad.
+12. No continúes con tests fallando.
+13. No elimines funciones existentes.
+14. No cambies dependencias sin justificarlo.
+15. No agregues paquetes innecesarios.
+16. Mantén código pequeño, tipado y documentado.
+17. Usa transacciones cuando corresponda.
+18. Usa idempotency keys.
+19. Versiona recetas y resultados.
+20. Todo costo debe atribuirse a un proyecto y usuario.
+
+34. PRIMERA RESPUESTA QUE ESPERO DE TI
+
+No empieces inmediatamente a crear todo.
+
+Primero responde con:
+
+1. Resumen de la arquitectura actual encontrada.
+2. Tecnologías actuales.
+3. Funciones que podemos reutilizar.
+4. Riesgos.
+5. Arquitectura exacta propuesta.
+6. Proveedores recomendados por tipo de tarea.
+7. Estimación inicial del costo por producto en Economy, Standard y Premium.
+8. Esquema de base de datos.
+9. Estructura de carpetas.
+10. Endpoints.
+11. Fases de implementación.
+12. Archivos que modificarás.
+13. Preguntas críticas que necesites resolver.
+
+Después crea:
+
+docs/higlou-creative-engine-plan.md
+
+No programes la implementación completa hasta que yo apruebe ese plan.
+
+Plan ejecutivo de implementación
+Este resumen no reemplaza el prompt maestro. Sirve para controlar el proyecto y evitar que Cursor avance sin disciplina.
+Checklist de aceptación final
+La portada utiliza fondo blanco puro y conserva fielmente el producto.
+La imagen del producto en su empaque forma parte del carrusel cuando existe empaque.
+No se inventan vistas, accesorios, medidas, materiales, textos ni funciones.
+El producto ordenado contiene exactamente las piezas confirmadas.
+Los acercamientos utilizan evidencia real del material y acabados.
+Las escenas de uso mantienen el diseño, color, patrón y proporciones.
+Las infografías se renderizan con código y datos verificados.
+Cada creativo tiene costo, proveedor, receta, versión, score y estado.
+El sistema regenera únicamente la imagen fallida.
+El usuario controla aprobación, orden y portada antes de enviar a eBay.
+Las API keys nunca llegan al navegador.
+La plataforma aplica presupuestos y detiene consumo excesivo.
+
+HIGLOU AI CREATIVE ENGINE
+Un estudio fotográfico virtual automatizado, fiel, rentable y preparado para crecer.
+--- TABLE ---
+
+--- TABLE ---
+Objetivo | Convertir fotos reales de productos en un carrusel profesional, validado y listo para eBay.
+Prioridad | Fidelidad al producto, automatización, ahorro de API y calidad exquisita.
+Método | Arquitectura modular, recetas versionadas, Product Truth Record, colas y validación.
+Uso | Pegar el prompt en Cursor y exigir que comience por la auditoría del repositorio.
+--- TABLE ---
+Fase | Entrega principal | Puerta de aprobación
+Fase 0 — Auditoría | Cursor analiza el repositorio, documenta lo existente, identifica reutilización, riesgos, costos y propone cambios. No se programa la solución completa. | Lint + typecheck + tests + revisión manual
+Fase 1 — Fundación | Carga, almacenamiento, normalización, hashes, deduplicación, calidad de entrada y modelos base. | Lint + typecheck + tests + revisión manual
+Fase 2 — Comprensión | Clasificación de imágenes, selección de referencias, análisis visual único y Product Truth Record. | Lint + typecheck + tests + revisión manual
+Fase 3 — Estudio blanco | Recorte preciso, fondo #FFFFFF, centrado, sombras, portada, empaque y vistas reales. | Lint + typecheck + tests + revisión manual
+Fase 4 — Planificador | Safety Engine, carrusel automático, recetas, Creative DNA y presupuesto por producto. | Lint + typecheck + tests + revisión manual
+Fase 5 — Creativos | Producto ordenado, fuera del empaque, acercamientos, producto en uso y lifestyle controlado. | Lint + typecheck + tests + revisión manual
+Fase 6 — Infografías | Características, medidas, piezas y defectos generados por código con datos verificados. | Lint + typecheck + tests + revisión manual
+Fase 7 — Calidad | Validación técnica y visual, scores, reintentos selectivos y revisión humana. | Lint + typecheck + tests + revisión manual
+Fase 8 — eBay | Orden del carrusel, aprobación, portada y conexión con el draft existente. | Lint + typecheck + tests + revisión manual
+Fase 9 — Rentabilidad | Dashboard de costos, límites, caché, métricas, alertas y comparación de proveedores. | Lint + typecheck + tests + revisión manual
