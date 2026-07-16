@@ -10,6 +10,12 @@ export type PublishToDonBaratonInput = {
   userId: string;
 };
 
+type DbProductRef = {
+  id: string;
+  slug: string;
+  published_at: string;
+};
+
 /** Public listing shape shared with Don Baraton storefront / sync API. */
 export type PublicMarketplaceListingPayload = {
   id: string;
@@ -159,11 +165,7 @@ export async function publishProductToDonBaraton(
     title: product.title,
   });
 
-  let existing: {
-    id: string;
-    slug: string;
-    published_at: string;
-  } | null = null;
+  let existing: DbProductRef | null = null;
 
   {
     const byHiglou = await supabase
@@ -171,7 +173,7 @@ export async function publishProductToDonBaraton(
       .select("id, slug, published_at")
       .eq("higlou_product_id", input.productId)
       .maybeSingle();
-    if (byHiglou.data) existing = byHiglou.data as typeof existing;
+    if (byHiglou.data) existing = byHiglou.data;
   }
 
   // Prefer updating a CSV-imported row with the same SKU / title (avoid unique sku clash).
@@ -181,7 +183,7 @@ export async function publishProductToDonBaraton(
       .select("id, slug, published_at")
       .ilike("sku", String(product.sku))
       .maybeSingle();
-    if (bySku.data) existing = bySku.data as typeof existing;
+    if (bySku.data) existing = bySku.data;
   }
   if (!existing && product.title) {
     const byTitle = await supabase
@@ -190,7 +192,7 @@ export async function publishProductToDonBaraton(
       .ilike("title", String(product.title))
       .limit(1)
       .maybeSingle();
-    if (byTitle.data) existing = byTitle.data as typeof existing;
+    if (byTitle.data) existing = byTitle.data;
   }
 
   const dbId = existing?.id || randomUUID();
