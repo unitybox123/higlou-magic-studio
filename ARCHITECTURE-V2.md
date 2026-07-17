@@ -19,7 +19,11 @@ Upload
                → Validation
                → Save normalized product + cache
                → Generate eBay CSV
+               → Optional: publish same listing to Don Baraton marketplace
 ```
+
+Higlou scope: **analyze product photos → perfect CSV for eBay + marketplace**.
+Creative / campaign image generation is out of scope (removed).
 
 ## Phase A modules
 

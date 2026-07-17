@@ -1,10 +1,12 @@
 # Higlou Magic Studio
 
-Private Higlou app that turns product photos into complete eBay draft CSVs using a hybrid pipeline:
+Private Higlou app that analyzes product photos and builds a perfect listing CSV for **eBay** and the same payload for our marketplace.
 
-**ZXing barcodes → Google Vision OCR (smart) → OpenAI multimodal → result fusion → Higlou HTML + eBay CSV**
+**ZXing barcodes → Google Vision OCR (smart) → OpenAI multimodal → result fusion → Higlou HTML + eBay CSV → optional publish to Don Baraton**
 
-> Marketplace (**Don Baraton Outlet**) is a separate repo:  
+Scope: product analysis and listing export only (no creative/campaign image studio).
+
+> Marketplace storefront (**Don Baraton Outlet**) is a separate repo:  
 > https://github.com/unitybox123/MARKET-PLACE-OUTLET
 
 ## Brand

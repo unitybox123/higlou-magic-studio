@@ -151,8 +151,8 @@ export default function HomeWorkspacePage() {
             {greeting}
           </h1>
           <p className="mt-3 max-w-lg text-base text-zinc-500">
-            Let&apos;s create your next eBay listing. I&apos;ll handle the
-            analysis — you just review and export.
+            Upload photos, I analyze the product, then you export a perfect CSV
+            for eBay and publish the same listing to your marketplace.
           </p>
           <Link
             href="/listings/new"

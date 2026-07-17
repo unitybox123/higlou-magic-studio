@@ -111,7 +111,7 @@ export function AppSidebar() {
           </button>
         </form>
         <p className="mt-3 px-3 text-[11px] leading-relaxed text-zinc-400">
-          Higlou AI · your sales workspace
+          Analyze → perfect CSV for eBay &amp; marketplace
         </p>
       </div>
     </aside>

@@ -24,8 +24,8 @@ const FLOW = [
   },
   {
     n: "04",
-    title: "Export to eBay",
-    body: "Download an eBay-ready CSV and keep selling without the busywork.",
+    title: "Export CSV",
+    body: "Download an eBay-ready CSV and publish the same listing to your marketplace.",
   },
 ] as const;
 
@@ -62,7 +62,7 @@ export function LandingPage() {
         <section className={styles.hero} aria-label="Higlou introduction">
           <div className={styles.heroCopy}>
             <p className={`${styles.kicker} ${styles.enter} ${styles.d1}`}>
-              Built for eBay sellers
+              Product analysis → perfect CSV
             </p>
 
             <h1 className={`${styles.headline} ${styles.enter} ${styles.d2}`}>

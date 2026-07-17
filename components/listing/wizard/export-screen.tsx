@@ -191,7 +191,7 @@ export function ExportScreen({
                   {exported ? "Exported!" : "All done!"}
                 </div>
                 <p className="text-[12px] text-muted-foreground">
-                  Your listing is ready to export to eBay.
+                  Your listing is ready for eBay CSV and your marketplace.
                 </p>
               </div>
             </div>

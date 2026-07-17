@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { LandingPage } from "@/components/landing/landing-page";
 
 export const metadata: Metadata = {
-  title: "Higlou — From photos to professional listings",
+  title: "Higlou — From photos to perfect listing CSVs",
   description:
-    "Your AI listing team for eBay. Upload photos, get a polished draft in under a minute.",
+    "Analyze products with AI, then export a polished CSV for eBay and your marketplace.",
 };
 
 export default function MarketingHomePage() {
