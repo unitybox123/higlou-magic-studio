@@ -238,8 +238,8 @@ export function ExportScreen({
             <ul className="mt-3 space-y-1.5 text-[12.5px]">
               {[
                 "SEO-optimized content",
-                "Professional images",
-                "eBay-compliant format",
+                "Accurate item specifics",
+                "eBay + marketplace CSV",
                 "Saves hours of work",
               ].map((t) => (
                 <li key={t} className="flex items-center gap-2">
