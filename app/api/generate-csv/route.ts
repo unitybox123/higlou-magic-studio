@@ -33,14 +33,27 @@ const bodySchema = z.object({
   sku: z.string().min(1),
   categoryId: z
     .string()
-    .regex(/^\d{3,8}$/, "Category ID must be a numeric eBay leaf ID (e.g. 15709)"),
-  title: z.string().min(1).max(80),
+    .optional()
+    .default("")
+    // Accept non-numeric IDs here — ensureEbayCategory resolves the real leaf.
+    .transform((v) => v.trim()),
+  title: z
+    .string()
+    .min(1)
+    .transform((v) => v.trim().slice(0, 80)),
   upc: z.string().optional().default(""),
-  price: z.number().positive(),
-  quantity: z.number().int().positive(),
-  itemPhotoUrls: z.array(z.string()),
+  price: z.coerce.number().positive(),
+  quantity: z.coerce.number().int().positive(),
+  itemPhotoUrls: z.array(z.string()).default([]),
   conditionId: z.string().min(1),
-  descriptionHtml: z.string().min(1),
+  descriptionHtml: z
+    .string()
+    .optional()
+    .default("")
+    .transform((v) => {
+      const trimmed = v.trim();
+      return trimmed || "<p></p>";
+    }),
   format: z.string().default("FixedPrice"),
   brand: z.string().optional(),
   model: z.string().optional(),
@@ -75,10 +88,35 @@ const bodySchema = z.object({
   exportMode: z.enum(["draft", "publish"]).default("draft"),
 });
 
+function formatCsvRouteError(error: unknown): string {
+  if (error && typeof error === "object" && "issues" in error) {
+    const issues = (error as { issues?: Array<{ path?: unknown[]; message?: string }> })
+      .issues;
+    if (Array.isArray(issues) && issues.length) {
+      return issues
+        .map((issue) => {
+          const path = Array.isArray(issue.path) ? issue.path.join(".") : "";
+          const msg = issue.message || "Invalid value";
+          return path ? `${path}: ${msg}` : msg;
+        })
+        .join("; ");
+    }
+  }
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return "Failed to generate CSV";
+}
+
 export async function POST(request: Request) {
   try {
     const json = await request.json();
-    const data = bodySchema.parse(json);
+    const parsedBody = bodySchema.safeParse(json);
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: formatCsvRouteError(parsedBody.error) },
+        { status: 400 },
+      );
+    }
+    const data = parsedBody.data;
 
     let authClient: Awaited<
       ReturnType<typeof requireUser>
@@ -155,6 +193,15 @@ export async function POST(request: Request) {
     });
     const categoryId = ensuredCategory.categoryId || data.categoryId;
     const categoryName = ensuredCategory.categoryName || data.categoryName || "";
+    if (!/^\d{3,8}$/.test(categoryId)) {
+      return NextResponse.json(
+        {
+          error:
+            "Could not resolve a valid eBay category ID. Pick a category on the details step, then export again.",
+        },
+        { status: 400 },
+      );
+    }
 
     setIfPresent(["Custom label (SKU)"], data.sku);
     setIfPresent(["Category ID"], categoryId);
@@ -350,8 +397,8 @@ export async function POST(request: Request) {
       headers: responseHeaders,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to generate CSV";
+    const message = formatCsvRouteError(error);
+    console.error("[generate-csv]", message, error);
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

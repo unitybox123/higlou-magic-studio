@@ -794,12 +794,12 @@ export function NewListingWorkspace({
     await persistDraft({ quiet: false });
   };
 
-  const generateCsv = async () => {
+  const generateCsv = async (): Promise<boolean> => {
     const items = validateListing(listing);
     if (hasCriticalErrors(items)) {
       toast.error("Fix critical validation errors before generating CSV");
       setMoreOpen(true);
-      return;
+      return false;
     }
 
     try {
@@ -853,13 +853,21 @@ export function NewListingWorkspace({
       });
 
       if (!response.ok) {
-        const errorBody = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(errorBody?.error || "CSV generation failed");
+        const raw = await response.text();
+        let message = "CSV generation failed";
+        try {
+          const errorBody = JSON.parse(raw) as { error?: string };
+          if (errorBody?.error?.trim()) message = errorBody.error.trim();
+        } catch {
+          if (raw.trim()) message = raw.trim().slice(0, 240);
+        }
+        throw new Error(message);
       }
 
       const blob = await response.blob();
+      if (!blob.size) {
+        throw new Error("CSV generation returned an empty file");
+      }
       const disposition = response.headers.get("Content-Disposition") || "";
       const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
       const asciiMatch = disposition.match(/filename="([^"]+)"/);
@@ -870,18 +878,22 @@ export function NewListingWorkspace({
       const anchor = document.createElement("a");
       anchor.href = url;
       anchor.download = fileName;
+      document.body.appendChild(anchor);
       anchor.click();
+      anchor.remove();
       URL.revokeObjectURL(url);
       update("status", "CSV Generated");
       const uploadHint =
         response.headers.get("X-Higlou-Upload-Hint") ||
-        'Upload as "Create or Schedule new listings" — not Create drafts.';
+        'Upload as "Create drafts" — then complete shipping on eBay.';
       toast.success(`Downloaded ${fileName}`, {
         description: uploadHint,
         duration: 12000,
       });
+      return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "CSV generation failed");
+      return false;
     }
   };
 
@@ -1074,7 +1086,7 @@ export function NewListingWorkspace({
           exported={exported}
           exportDisabled={exportDisabled}
           exportDisabledReason={generateCsvDisabledReason}
-          onExport={() => void generateCsv()}
+          onExport={generateCsv}
           onPublishToDonBaraton={() => void publishToDonBaraton()}
           publishingDonBaraton={publishingDonBaraton}
           donBaratonPublished={donBaratonPublished}

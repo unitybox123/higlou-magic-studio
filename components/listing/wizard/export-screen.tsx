@@ -55,7 +55,7 @@ export function ExportScreen({
   exported: boolean;
   exportDisabled: boolean;
   exportDisabledReason?: string;
-  onExport: () => void;
+  onExport: () => void | boolean | Promise<void | boolean>;
   onPublishToDonBaraton?: () => void;
   publishingDonBaraton?: boolean;
   donBaratonPublished?: boolean;
@@ -65,6 +65,8 @@ export function ExportScreen({
   onSaveDraft?: () => void;
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportSucceeded, setExportSucceeded] = useState(false);
   const galleryUrls = listing.images.map((i) => i.url).filter(Boolean);
   const galleryCount = galleryUrls.length;
 
@@ -170,11 +172,19 @@ export function ExportScreen({
     listing.images[0]?.url ||
     "";
 
-  const handleExport = () => {
-    if (!exportDisabled) {
-      onExport();
+  const handleExport = async () => {
+    if (exportDisabled || exporting) return;
+    setExporting(true);
+    try {
+      const result = await Promise.resolve(onExport());
+      if (result === false) return;
+      setExportSucceeded(true);
+      setDialogOpen(true);
+    } catch {
+      // onExport should toast; keep dialog closed on failure
+    } finally {
+      setExporting(false);
     }
-    setDialogOpen(true);
   };
 
   return (
@@ -539,11 +549,12 @@ export function ExportScreen({
             ) : null}
             <button
               type="button"
-              disabled={exportDisabled}
-              onClick={handleExport}
+              disabled={exportDisabled || exporting}
+              onClick={() => void handleExport()}
               className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-[14px] font-semibold text-brand-foreground shadow-sm transition-transform hover:-translate-y-px hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Export CSV for eBay <Download className="h-4 w-4" />
+              {exporting ? "Generating CSV…" : "Export CSV for eBay"}{" "}
+              <Download className="h-4 w-4" />
             </button>
           </>
         }
@@ -577,13 +588,15 @@ export function ExportScreen({
                 <Check className="h-7 w-7" strokeWidth={3} />
               </div>
               <h3 className="mt-4 text-[20px] font-semibold tracking-tight">
-                {exported || !exportDisabled
+                {exported || exportSucceeded
                   ? "Your CSV is ready"
                   : "Almost there"}
               </h3>
               <p className="mt-1 text-[13px] text-muted-foreground">
-                {exportDisabledReason ||
-                  "We've packaged your listing into an eBay-compatible CSV file."}
+                {exported || exportSucceeded
+                  ? "We've packaged your listing into an eBay-compatible CSV file."
+                  : exportDisabledReason ||
+                    "Fix any remaining issues, then export again."}
               </p>
               <div className="mt-5 flex flex-col gap-2">
                 <button
