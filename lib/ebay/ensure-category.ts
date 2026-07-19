@@ -48,8 +48,11 @@ export async function ensureEbayCategory(options: {
   userId?: string;
   productId?: string;
   supabase?: SupabaseClient | null;
+  /** When false, never call OpenAI (use for CSV export to avoid spend). Default true. */
+  allowAi?: boolean;
 }): Promise<CategoryResolution> {
   const rawId = (options.categoryId || "").trim();
+  const allowAi = options.allowAi !== false;
   const productType =
     options.productType ||
     (rawId && !isValidEbayCategoryId(rawId) ? rawId : null);
@@ -105,14 +108,16 @@ export async function ensureEbayCategory(options: {
   }
 
   // 3) Free-form AI: resolve ANY product to a real US leaf ID.
-  const aiResolved = await resolveCategoryWithAi({
-    ...options,
-    productType,
-    rejectCategoryId: mismatch ? rawId : undefined,
-  });
-  if (aiResolved) return aiResolved;
+  if (allowAi) {
+    const aiResolved = await resolveCategoryWithAi({
+      ...options,
+      productType,
+      rejectCategoryId: mismatch ? rawId : undefined,
+    });
+    if (aiResolved) return aiResolved;
+  }
 
-  // 4) Weak catalog keyword fallback only when AI unavailable / failed.
+  // 4) Weak catalog keyword fallback only when AI unavailable / failed / disabled.
   const initial = resolveEbayCategory(normalized);
   if (initial.categoryId && initial.confidence >= 0.72) {
     return { ...initial, source: "catalog" };

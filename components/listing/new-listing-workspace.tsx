@@ -855,13 +855,25 @@ export function NewListingWorkspace({
       if (!response.ok) {
         const raw = await response.text();
         let message = "CSV generation failed";
-        try {
-          const errorBody = JSON.parse(raw) as { error?: string };
-          if (errorBody?.error?.trim()) message = errorBody.error.trim();
-        } catch {
-          if (raw.trim()) message = raw.trim().slice(0, 240);
+        if (/^\s*<!DOCTYPE html/i.test(raw) || /__next_error__/i.test(raw)) {
+          message =
+            response.status === 401
+              ? "Sign in again, then export the CSV."
+              : "CSV export crashed on the server. Try again in a moment.";
+        } else {
+          try {
+            const errorBody = JSON.parse(raw) as { error?: string };
+            if (errorBody?.error?.trim()) message = errorBody.error.trim();
+          } catch {
+            if (raw.trim()) message = raw.trim().slice(0, 240);
+          }
         }
         throw new Error(message);
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("text/html")) {
+        throw new Error("Sign in again, then export the CSV.");
       }
 
       const blob = await response.blob();

@@ -95,6 +95,13 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (!user) {
+    // API callers (fetch) must get JSON — never an HTML login redirect.
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Authentication required. Sign in and try again." },
+        { status: 401 },
+      );
+    }
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirect", pathname);

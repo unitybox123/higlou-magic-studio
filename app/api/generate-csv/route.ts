@@ -29,14 +29,15 @@ import { requireUser } from "@/lib/auth/require-user";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
-  productId: z.string().uuid().optional(),
+  productId: z.preprocess(
+    (v) => (v === null || v === "" ? undefined : v),
+    z.string().uuid().optional(),
+  ),
   sku: z.string().min(1),
-  categoryId: z
-    .string()
-    .optional()
-    .default("")
-    // Accept non-numeric IDs here — ensureEbayCategory resolves the real leaf.
-    .transform((v) => v.trim()),
+  categoryId: z.preprocess(
+    (v) => (v == null ? "" : String(v)),
+    z.string().transform((v) => v.trim()),
+  ),
   title: z
     .string()
     .min(1)
@@ -46,14 +47,13 @@ const bodySchema = z.object({
   quantity: z.coerce.number().int().positive(),
   itemPhotoUrls: z.array(z.string()).default([]),
   conditionId: z.string().min(1),
-  descriptionHtml: z
-    .string()
-    .optional()
-    .default("")
-    .transform((v) => {
+  descriptionHtml: z.preprocess(
+    (v) => (v == null ? "" : String(v)),
+    z.string().transform((v) => {
       const trimmed = v.trim();
       return trimmed || "<p></p>";
     }),
+  ),
   format: z.string().default("FixedPrice"),
   brand: z.string().optional(),
   model: z.string().optional(),
@@ -72,12 +72,18 @@ const bodySchema = z.object({
   itemLocation: z.string().optional(),
   postalCode: z.string().optional(),
   country: z.string().optional(),
-  handlingTime: z.number().int().min(0).optional(),
+  handlingTime: z.preprocess(
+    (v) => (v === null || v === "" ? undefined : v),
+    z.coerce.number().int().min(0).optional(),
+  ),
   shippingPolicyId: z.string().optional(),
   returnPolicyId: z.string().optional(),
   paymentPolicyId: z.string().optional(),
   shippingService: z.string().optional(),
-  shippingCost: z.number().optional(),
+  shippingCost: z.preprocess(
+    (v) => (v === null || v === "" ? undefined : v),
+    z.coerce.number().optional(),
+  ),
   packageWeightLbs: z.number().int().min(0).optional(),
   packageWeightOz: z.number().int().min(0).max(15).optional(),
   /**
@@ -190,6 +196,8 @@ export async function POST(request: Request) {
       userId,
       productId: data.productId,
       supabase: authClient?.ok ? authClient.supabase : null,
+      // Export must not spend OpenAI tokens — analysis already resolved category.
+      allowAi: false,
     });
     const categoryId = ensuredCategory.categoryId || data.categoryId;
     const categoryName = ensuredCategory.categoryName || data.categoryName || "";
@@ -329,32 +337,6 @@ export async function POST(request: Request) {
       ? "Upload as Create or Schedule new listings."
       : "Upload as Create drafts. Then complete location, shipping, returns, and any missing specifics on eBay.";
 
-    const prefillNote = useAddAction
-      ? toAsciiHttpHeaderValue(
-          [
-            uploadHint,
-            `Category ${categoryId}.`,
-            `Postal ${sellerDefaults.postalCode}.`,
-            `Package ${packageEstimate.weightLbs} lb ${packageEstimate.weightOz} oz`,
-            `(${packageEstimate.lengthIn}x${packageEstimate.widthIn}x${packageEstimate.depthIn} in).`,
-            hasShippingProfile
-              ? `Shipping profile ${sellerDefaults.shippingPolicyId}.`
-              : `Service ${selectedService} flat $${packageEstimate.shippingCost.toFixed(2)}.`,
-            `Handling ${sellerDefaults.handlingTime} day(s).`,
-          ].join(" "),
-        )
-      : toAsciiHttpHeaderValue(
-          [
-            uploadHint,
-            `Category ${categoryId}.`,
-            `Use Shipping tab values when completing draft:`,
-            `location ${sellerDefaults.itemLocation} ${sellerDefaults.postalCode},`,
-            `service ${selectedService},`,
-            `package ${packageEstimate.weightLbs}lb ${packageEstimate.weightOz}oz`,
-            `(${packageEstimate.lengthIn}x${packageEstimate.widthIn}x${packageEstimate.depthIn} in).`,
-          ].join(" "),
-        );
-
     if (authClient?.ok) {
       await authClient.supabase.from("generated_csv_files").insert({
         user_id: authClient.user.id,
@@ -372,30 +354,32 @@ export async function POST(request: Request) {
       }
     }
 
+    // Keep custom headers short/ASCII — invalid ByteStrings crash NextResponse on Vercel.
     const responseHeaders: Record<string, string> = {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": buildAttachmentContentDisposition(fileName),
       "X-Higlou-Template-Type": toAsciiHttpHeaderValue(parsed.meta.templateType),
-      "X-Higlou-Template-Sha256": toAsciiHttpHeaderValue(parsed.meta.sha256),
       "X-Higlou-Template-Source": toAsciiHttpHeaderValue(templateSource),
       "X-Higlou-Export-Mode": toAsciiHttpHeaderValue(
         useAddAction ? "publish" : "draft",
       ),
-      "X-Higlou-Draft-Prefill-Note": prefillNote,
-      "X-Higlou-Package-Weight": toAsciiHttpHeaderValue(
-        `${packageEstimate.weightLbs}lb ${packageEstimate.weightOz}oz`,
-      ),
-      "X-Higlou-Shipping-Service": toAsciiHttpHeaderValue(
-        hasShippingProfile
-          ? sellerDefaults.shippingPolicyId
-          : selectedService,
-      ),
       "X-Higlou-Upload-Hint": toAsciiHttpHeaderValue(uploadHint),
     };
-    return new NextResponse(csv, {
-      status: 200,
-      headers: responseHeaders,
-    });
+    try {
+      return new NextResponse(csv, {
+        status: 200,
+        headers: responseHeaders,
+      });
+    } catch (headerError) {
+      console.error("[generate-csv] response headers failed", headerError);
+      return new NextResponse(csv, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": `attachment; filename="Higlou_Export.csv"`,
+        },
+      });
+    }
   } catch (error) {
     const message = formatCsvRouteError(error);
     console.error("[generate-csv]", message, error);
