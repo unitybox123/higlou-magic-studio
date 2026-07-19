@@ -6,6 +6,7 @@ import {
   EXPECTED_CREATE_LISTING_TEMPLATE_SHA256,
   EXPECTED_SEED_TEMPLATE_SHA256,
 } from "@/types/ebay";
+import { loadEmbeddedSeedDraftTemplateRaw } from "@/lib/csv/seed-draft-template";
 
 function detectTemplateType(
   infoLine: string,
@@ -135,16 +136,26 @@ export function getCreateListingTemplateAbsolutePath() {
 }
 
 export function loadSeedTemplateRaw(): string {
-  const filePath = getSeedTemplateAbsolutePath();
-  const raw = readFileSync(filePath);
-  const text = raw.toString("utf8");
-  const sha = createHash("sha256").update(raw).digest("hex").toUpperCase();
+  try {
+    const filePath = getSeedTemplateAbsolutePath();
+    const raw = readFileSync(filePath);
+    const text = raw.toString("utf8");
+    const sha = createHash("sha256").update(raw).digest("hex").toUpperCase();
+    if (sha === EXPECTED_SEED_TEMPLATE_SHA256) return text;
+  } catch {
+    // Fall through to embedded seed (Vercel serverless often lacks templates/).
+  }
+  const embedded = loadEmbeddedSeedDraftTemplateRaw();
+  const sha = createHash("sha256")
+    .update(Buffer.from(embedded, "utf8"))
+    .digest("hex")
+    .toUpperCase();
   if (sha !== EXPECTED_SEED_TEMPLATE_SHA256) {
     throw new Error(
-      `Seed template hash mismatch. Expected ${EXPECTED_SEED_TEMPLATE_SHA256}, got ${sha}`,
+      `Embedded seed template hash mismatch. Expected ${EXPECTED_SEED_TEMPLATE_SHA256}, got ${sha}`,
     );
   }
-  return text;
+  return embedded;
 }
 
 /** Publish-ready Create/Schedule template — eBay Create Drafts ignores shipping. */

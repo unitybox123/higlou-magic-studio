@@ -14,7 +14,6 @@ import {
   buildItemPhotoUrlValue,
   toAsciiHttpHeaderValue,
 } from "@/lib/ebay/listing-helpers";
-import { sanitizeEbayHtml } from "@/lib/ebay/sanitize-html";
 import {
   draftDefaultsToPolicyValues,
   loadSellerDraftDefaults,
@@ -23,10 +22,17 @@ import {
   estimatePackageAndShipping,
   packageEstimateToCsvValues,
 } from "@/lib/ebay/package-shipping";
-import { ensureEbayCategory } from "@/lib/ebay/ensure-category";
 import { enrichItemSpecificsForExport } from "@/lib/ebay/enrich-export-specifics";
 import { requireUser } from "@/lib/auth/require-user";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
+import {
+  isValidEbayCategoryId,
+  resolveEbayCategory,
+} from "@/config/ebay-categories";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const bodySchema = z.object({
   productId: z.preprocess(
@@ -86,18 +92,50 @@ const bodySchema = z.object({
   ),
   packageWeightLbs: z.number().int().min(0).optional(),
   packageWeightOz: z.number().int().min(0).max(15).optional(),
-  /**
-   * draft = official Create Drafts (default — eBay accepts the first #INFO line).
-   * Only use a seller-uploaded Create/Schedule template when it is a real eBay file
-   * (never Higlou-invented INFO lines — Seller Hub rejects those).
-   */
   exportMode: z.enum(["draft", "publish"]).default("draft"),
 });
 
+/** Lightweight HTML scrub — never import DOMPurify/jsdom in this route. */
+function scrubDescriptionHtml(html: string): string {
+  return String(html || "")
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function resolveCategoryId(input: {
+  categoryId: string;
+  categoryName?: string;
+  productType?: string;
+  title?: string;
+  brand?: string;
+}): { categoryId: string; categoryName: string } {
+  const raw = (input.categoryId || "").trim();
+  if (isValidEbayCategoryId(raw)) {
+    return {
+      categoryId: raw,
+      categoryName: input.categoryName || "",
+    };
+  }
+  const hit = resolveEbayCategory({
+    categoryId: "",
+    categoryName: input.categoryName,
+    productType: input.productType || raw || undefined,
+    title: input.title,
+    brand: input.brand,
+  });
+  return {
+    categoryId: hit.categoryId || "",
+    categoryName: hit.categoryName || input.categoryName || "",
+  };
+}
+
 function formatCsvRouteError(error: unknown): string {
   if (error && typeof error === "object" && "issues" in error) {
-    const issues = (error as { issues?: Array<{ path?: unknown[]; message?: string }> })
-      .issues;
+    const issues = (
+      error as { issues?: Array<{ path?: unknown[]; message?: string }> }
+    ).issues;
     if (Array.isArray(issues) && issues.length) {
       return issues
         .map((issue) => {
@@ -124,45 +162,43 @@ export async function POST(request: Request) {
     }
     const data = parsedBody.data;
 
-    let authClient: Awaited<
-      ReturnType<typeof requireUser>
-    > | null = null;
+    let authClient: Awaited<ReturnType<typeof requireUser>> | null = null;
     let userId: string | undefined;
     if (isSupabaseConfigured()) {
       authClient = await requireUser();
       if (authClient.ok) userId = authClient.user.id;
     }
 
-    const itemPhotoUrls = data.itemPhotoUrls;
-
-    const active = await loadActiveTemplateRaw(userId);
-    const activeParsed = parseEbayTemplate(active.raw);
-    const activeInfo = activeParsed.meta.rawInfoLine.toLowerCase();
-    const isFakeHiglouCreateTemplate =
-      activeInfo.includes("higlou") ||
-      activeInfo.includes("create-or-schedule-listings-higlou");
-    const isRealEbayCreateSchedule =
-      !isFakeHiglouCreateTemplate &&
-      activeParsed.meta.templateType === "new_listing" &&
-      templateHasPublishReadyShipping(activeParsed.meta.headers) &&
-      (activeInfo.includes("create or schedule") ||
-        activeInfo.includes("new-listings") ||
-        activeInfo.includes("schedule"));
-
-    // Default: exact official Create Drafts seed (Shark/Aquafina uploads that completed).
-    // Invented Create/Schedule INFO lines cause: "We couldn't identify your template".
+    // Prefer official Create Drafts seed (embedded fallback). Optional seller
+    // Create/Schedule template only when it's a real eBay file.
     let templateRaw = loadSeedTemplateRaw();
     let templateSource: "database" | "seed" = "seed";
     let useAddAction = false;
 
-    if (isRealEbayCreateSchedule) {
-      templateRaw = active.raw;
-      templateSource = active.source;
-      useAddAction = true;
+    try {
+      const active = await loadActiveTemplateRaw(userId);
+      const activeParsed = parseEbayTemplate(active.raw);
+      const activeInfo = activeParsed.meta.rawInfoLine.toLowerCase();
+      const isFakeHiglouCreateTemplate =
+        activeInfo.includes("higlou") ||
+        activeInfo.includes("create-or-schedule-listings-higlou");
+      const isRealEbayCreateSchedule =
+        !isFakeHiglouCreateTemplate &&
+        activeParsed.meta.templateType === "new_listing" &&
+        templateHasPublishReadyShipping(activeParsed.meta.headers) &&
+        (activeInfo.includes("create or schedule") ||
+          activeInfo.includes("new-listings") ||
+          activeInfo.includes("schedule"));
+      if (isRealEbayCreateSchedule) {
+        templateRaw = active.raw;
+        templateSource = active.source;
+        useAddAction = true;
+      }
+    } catch (templateError) {
+      console.warn("[generate-csv] active template skipped", templateError);
     }
 
     const parsed = parseEbayTemplate(templateRaw);
-
     if (parsed.meta.templateType === "unknown") {
       return NextResponse.json(
         { error: "Template type is unknown. Validate headers before generating." },
@@ -187,25 +223,20 @@ export async function POST(request: Request) {
       if (header) valuesByHeader[header] = value;
     };
 
-    const ensuredCategory = await ensureEbayCategory({
+    const resolved = resolveCategoryId({
       categoryId: data.categoryId,
       categoryName: data.categoryName,
       productType: data.productType,
       title: data.title,
       brand: data.brand,
-      userId,
-      productId: data.productId,
-      supabase: authClient?.ok ? authClient.supabase : null,
-      // Export must not spend OpenAI tokens — analysis already resolved category.
-      allowAi: false,
     });
-    const categoryId = ensuredCategory.categoryId || data.categoryId;
-    const categoryName = ensuredCategory.categoryName || data.categoryName || "";
-    if (!/^\d{3,8}$/.test(categoryId)) {
+    const categoryId = resolved.categoryId;
+    const categoryName = resolved.categoryName;
+    if (!isValidEbayCategoryId(categoryId)) {
       return NextResponse.json(
         {
           error:
-            "Could not resolve a valid eBay category ID. Pick a category on the details step, then export again.",
+            "Pick a valid eBay category on the details step, then export again.",
         },
         { status: 400 },
       );
@@ -220,11 +251,11 @@ export async function POST(request: Request) {
     setIfPresent(
       ["Item photo URL"],
       buildItemPhotoUrlValue(
-        itemPhotoUrls.filter((url) => /^https:\/\//i.test(url)),
+        data.itemPhotoUrls.filter((url) => /^https:\/\//i.test(url)),
       ),
     );
     setIfPresent(["Condition ID", "Condition"], data.conditionId);
-    setIfPresent(["Description"], sanitizeEbayHtml(data.descriptionHtml));
+    setIfPresent(["Description"], scrubDescriptionHtml(data.descriptionHtml));
     setIfPresent(["Format"], data.format);
     setIfPresent(["Duration"], "GTC");
 
@@ -269,9 +300,6 @@ export async function POST(request: Request) {
 
     const hasShippingProfile = Boolean(sellerDefaults.shippingPolicyId?.trim());
 
-    // Create Drafts template only reads the official 11 columns (+ optional C:*).
-    // Shipping, location, weight, and return policy require manual completion on eBay
-    // unless using an official Create/Schedule template with Business Policies.
     if (useAddAction) {
       const mergedPolicyValues = {
         ...draftDefaultsToPolicyValues(sellerDefaults),
@@ -335,45 +363,49 @@ export async function POST(request: Request) {
       : "Upload as Create drafts. Then complete location, shipping, returns, and any missing specifics on eBay.";
 
     if (authClient?.ok) {
-      await authClient.supabase.from("generated_csv_files").insert({
-        user_id: authClient.user.id,
-        product_id: data.productId ?? null,
-        file_name: fileName,
-        content: csv,
-        template_sha256: parsed.meta.sha256,
-      });
-      if (data.productId) {
-        await authClient.supabase
-          .from("products")
-          .update({ status: "CSV Generated", updated_at: new Date().toISOString() })
-          .eq("id", data.productId)
-          .eq("user_id", authClient.user.id);
+      try {
+        await authClient.supabase.from("generated_csv_files").insert({
+          user_id: authClient.user.id,
+          product_id: data.productId ?? null,
+          file_name: fileName,
+          content: csv,
+          template_sha256: parsed.meta.sha256,
+        });
+        if (data.productId) {
+          await authClient.supabase
+            .from("products")
+            .update({
+              status: "CSV Generated",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", data.productId)
+            .eq("user_id", authClient.user.id);
+        }
+      } catch (dbError) {
+        console.warn("[generate-csv] history insert skipped", dbError);
       }
     }
 
-    // Keep custom headers short/ASCII — invalid ByteStrings crash NextResponse on Vercel.
-    const responseHeaders: Record<string, string> = {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": buildAttachmentContentDisposition(fileName),
-      "X-Higlou-Template-Type": toAsciiHttpHeaderValue(parsed.meta.templateType),
-      "X-Higlou-Template-Source": toAsciiHttpHeaderValue(templateSource),
-      "X-Higlou-Export-Mode": toAsciiHttpHeaderValue(
-        useAddAction ? "publish" : "draft",
-      ),
-      "X-Higlou-Upload-Hint": toAsciiHttpHeaderValue(uploadHint),
-    };
     try {
-      return new NextResponse(csv, {
-        status: 200,
-        headers: responseHeaders,
-      });
-    } catch (headerError) {
-      console.error("[generate-csv] response headers failed", headerError);
       return new NextResponse(csv, {
         status: 200,
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename="Higlou_Export.csv"`,
+          "Content-Disposition": buildAttachmentContentDisposition(fileName),
+          "X-Higlou-Template-Source": toAsciiHttpHeaderValue(templateSource),
+          "X-Higlou-Export-Mode": toAsciiHttpHeaderValue(
+            useAddAction ? "publish" : "draft",
+          ),
+          "X-Higlou-Upload-Hint": toAsciiHttpHeaderValue(uploadHint),
+        },
+      });
+    } catch (headerError) {
+      console.error("[generate-csv] headers failed", headerError);
+      return new NextResponse(csv, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": 'attachment; filename="Higlou_Export.csv"',
         },
       });
     }
