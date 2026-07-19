@@ -21,6 +21,7 @@ import {
   Save,
   ShieldCheck,
   Sparkles,
+  Store,
   Type,
   X,
 } from "lucide-react";
@@ -547,6 +548,21 @@ export function ExportScreen({
                 className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-[14px] font-medium hover:bg-muted"
               >
                 List another
+              </button>
+            ) : null}
+            {onPublishToDonBaraton ? (
+              <button
+                type="button"
+                disabled={exportDisabled || publishingDonBaraton}
+                onClick={onPublishToDonBaraton}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#c8102e] px-4 py-2.5 text-[14px] font-semibold text-white shadow-sm transition-transform hover:-translate-y-px hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Store className="h-4 w-4" />
+                {publishingDonBaraton
+                  ? "Publishing…"
+                  : donBaratonPublished
+                    ? "Update on Don Baratón"
+                    : "Publish to Don Baratón"}
               </button>
             ) : null}
             <button
