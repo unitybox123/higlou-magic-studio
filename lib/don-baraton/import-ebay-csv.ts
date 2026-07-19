@@ -35,37 +35,59 @@ export async function pushEbayCsvToDonBaraton(
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   form.append("file", blob, fileName.endsWith(".csv") ? fileName : `${fileName}.csv`);
   form.append("autoApply", "true");
-  form.append("source", "higlou");
+  form.append("source", "higlou_csv");
 
   try {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${config.importToken}`,
+        Accept: "application/json",
       },
       body: form,
     });
 
-    const body = (await res.json().catch(() => null)) as {
+    const contentType = res.headers.get("content-type") || "";
+    const rawText = await res.text();
+    let body: {
       ok?: boolean;
       error?: string;
       batchId?: string;
       summary?: Record<string, number>;
       message?: string;
-    } | null;
+    } | null = null;
+    if (contentType.includes("application/json")) {
+      try {
+        body = JSON.parse(rawText) as typeof body;
+      } catch {
+        body = null;
+      }
+    }
 
     if (!res.ok) {
       const message =
-        body?.error || body?.message || `Don Baratón HTTP ${res.status}`;
+        body?.error ||
+        body?.message ||
+        (contentType.includes("text/html")
+          ? `Don Baratón returned HTML ${res.status} — endpoint not deployed on that URL?`
+          : `Don Baratón HTTP ${res.status}`);
+      console.error("[don-baraton import]", message);
+      return { status: "error", message, httpStatus: res.status };
+    }
+
+    if (!body || body.ok === false) {
+      const message =
+        body?.error ||
+        "Don Baratón returned a non-JSON success response (is production deployed?)";
       console.error("[don-baraton import]", message);
       return { status: "error", message, httpStatus: res.status };
     }
 
     return {
       status: "ok",
-      batchId: body?.batchId,
-      summary: body?.summary,
-      message: body?.message,
+      batchId: body.batchId,
+      summary: body.summary,
+      message: body.message,
     };
   } catch (error) {
     const message =
