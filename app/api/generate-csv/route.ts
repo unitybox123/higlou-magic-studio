@@ -330,9 +330,6 @@ export async function POST(request: Request) {
       sku: data.sku,
     });
 
-    const selectedService =
-      packageEstimate.shippingService || data.shippingService || "USPSGroundAdvantage";
-
     const uploadHint = useAddAction
       ? "Upload as Create or Schedule new listings."
       : "Upload as Create drafts. Then complete location, shipping, returns, and any missing specifics on eBay.";
