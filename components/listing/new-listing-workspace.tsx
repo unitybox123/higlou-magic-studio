@@ -898,10 +898,23 @@ export function NewListingWorkspace({
       const uploadHint =
         response.headers.get("X-Higlou-Upload-Hint") ||
         'Upload as "Create drafts" — then complete shipping on eBay.';
+      const donBaratonSync =
+        response.headers.get("X-Higlou-DonBaraton-Sync") || "";
       toast.success(`Downloaded ${fileName}`, {
         description: uploadHint,
         duration: 12000,
       });
+      if (donBaratonSync.startsWith("ok")) {
+        toast.success("Also sent to Don Baratón", {
+          description: "Same eBay CSV applied on the storefront.",
+          duration: 8000,
+        });
+      } else if (donBaratonSync.startsWith("error:")) {
+        toast.error("Don Baratón sync failed", {
+          description: donBaratonSync.slice(6).slice(0, 160),
+          duration: 10000,
+        });
+      }
       return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "CSV generation failed");
@@ -910,44 +923,111 @@ export function NewListingWorkspace({
   };
 
   const publishToDonBaraton = async () => {
-    const saved = await persistDraft({ quiet: true });
-    if (!saved.ok) {
-      toast.error(saved.message);
-      return;
-    }
-
-    const productId = listing.id;
-    if (!/^[0-9a-f-]{36}$/i.test(productId)) {
-      toast.error("Save the listing before publishing to Don Baraton");
+    const items = validateListing(listing);
+    if (hasCriticalErrors(items)) {
+      toast.error("Fix critical validation errors before publishing");
+      setMoreOpen(true);
       return;
     }
 
     setPublishingDonBaraton(true);
     try {
-      const response = await fetch("/api/marketplace/publish", {
+      const csvResponse = await fetch("/api/generate-csv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
+        body: JSON.stringify({
+          productId: /^[0-9a-f-]{36}$/i.test(listing.id) ? listing.id : undefined,
+          sku: listing.sku,
+          categoryId: listing.categoryId,
+          title: listing.title,
+          upc: listing.upc,
+          price: listing.price,
+          quantity: listing.quantity,
+          itemPhotoUrls: orderedImageUrls,
+          conditionId: listing.conditionId,
+          descriptionHtml: listing.descriptionHtml,
+          format: listing.listingFormat,
+          brand: listing.brand,
+          model: listing.model || listing.collection,
+          size: listing.size,
+          productType: listing.productType || listing.type,
+          categoryName: listing.categoryName,
+          itemSpecifics: listing.itemSpecifics.map((field) => ({
+            key: field.key,
+            value: field.value,
+          })),
+          policyValues: {
+            ...(listing.shippingPolicyId
+              ? { "Shipping profile name": listing.shippingPolicyId }
+              : {}),
+            ...(listing.returnPolicyId
+              ? { "Return profile name": listing.returnPolicyId }
+              : {}),
+            ...(listing.paymentPolicyId
+              ? { "Payment profile name": listing.paymentPolicyId }
+              : {}),
+          },
+          itemLocation: listing.itemLocation || DEFAULT_VALUES.itemLocation,
+          postalCode: listing.postalCode || DEFAULT_VALUES.postalCode,
+          country: listing.country || DEFAULT_VALUES.country,
+          handlingTime: listing.handlingTime,
+          shippingPolicyId: listing.shippingPolicyId,
+          returnPolicyId: listing.returnPolicyId,
+          paymentPolicyId: listing.paymentPolicyId,
+          shippingService: listing.shippingService,
+          shippingCost: listing.shippingCost ?? undefined,
+          exportMode: "draft",
+        }),
       });
-      const body = (await response.json().catch(() => null)) as {
+
+      if (!csvResponse.ok) {
+        const errBody = (await csvResponse.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(errBody?.error || "Failed to build eBay CSV");
+      }
+
+      const csv = await csvResponse.text();
+      const disposition = csvResponse.headers.get("Content-Disposition") || "";
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      const asciiMatch = disposition.match(/filename="([^"]+)"/);
+      const fileName = utf8Match
+        ? decodeURIComponent(utf8Match[1])
+        : asciiMatch?.[1] || "Higlou_Export.csv";
+
+      const syncHeader =
+        csvResponse.headers.get("X-Higlou-DonBaraton-Sync") || "";
+      if (syncHeader.startsWith("ok")) {
+        update("status", "Published");
+        toast.success("Published to Don Baratón", {
+          description: "Same eBay CSV applied (create/update by SKU).",
+          duration: 10000,
+        });
+        return;
+      }
+
+      // Retry via dedicated import route if generate-csv skipped or errored.
+      const importResponse = await fetch("/api/don-baraton/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csv, fileName }),
+      });
+      const body = (await importResponse.json().catch(() => null)) as {
         error?: string;
-        listing?: { slug: string };
+        message?: string;
+        storefrontUrl?: string;
       } | null;
-      if (!response.ok) {
-        throw new Error(body?.error || "Failed to publish to Don Baraton");
+      if (!importResponse.ok) {
+        throw new Error(body?.error || "Failed to publish to Don Baratón");
       }
       update("status", "Published");
-      const storefront =
-        process.env.NEXT_PUBLIC_DON_BARATON_URL || "http://localhost:3001";
-      toast.success("Published to Don Baraton", {
-        description: body?.listing?.slug
-          ? `${storefront}/item/${body.listing.slug}`
-          : storefront,
+      toast.success("Published to Don Baratón", {
+        description: body?.storefrontUrl || body?.message || "Import applied",
         duration: 10000,
       });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Don Baraton publish failed",
+        error instanceof Error ? error.message : "Don Baratón publish failed",
       );
     } finally {
       setPublishingDonBaraton(false);

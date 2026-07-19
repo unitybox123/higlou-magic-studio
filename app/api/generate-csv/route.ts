@@ -29,6 +29,7 @@ import {
   isValidEbayCategoryId,
   resolveEbayCategory,
 } from "@/config/ebay-categories";
+import { pushEbayCsvToDonBaraton } from "@/lib/don-baraton/import-ebay-csv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -386,6 +387,15 @@ export async function POST(request: Request) {
       }
     }
 
+    // Best-effort mirror to Don Baratón (same eBay CSV). Never fail eBay export.
+    const donBaratonSync = await pushEbayCsvToDonBaraton(csv, fileName);
+    const donBaratonHeader =
+      donBaratonSync.status === "ok"
+        ? "ok"
+        : donBaratonSync.status === "skipped"
+          ? `skipped:${donBaratonSync.reason}`
+          : `error:${donBaratonSync.message}`;
+
     try {
       return new NextResponse(csv, {
         status: 200,
@@ -397,6 +407,9 @@ export async function POST(request: Request) {
             useAddAction ? "publish" : "draft",
           ),
           "X-Higlou-Upload-Hint": toAsciiHttpHeaderValue(uploadHint),
+          "X-Higlou-DonBaraton-Sync": toAsciiHttpHeaderValue(
+            donBaratonHeader.slice(0, 180),
+          ),
         },
       });
     } catch (headerError) {

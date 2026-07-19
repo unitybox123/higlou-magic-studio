@@ -477,8 +477,9 @@ export function ExportScreen({
               Don Baraton Marketplace
             </h3>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
-              Same listing goes to your storefront — organized by the same eBay
-              Category ID (Bedding, Lighting, Kitchen &amp; Appliances…).
+              Pushes the same eBay Seller Hub CSV to{" "}
+              <span className="font-medium">www.donbaraton.shop</span> (create/update
+              by SKU). Export CSV already syncs when credentials are set.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
@@ -502,7 +503,8 @@ export function ExportScreen({
             <p className="mt-2 text-[11px] text-muted-foreground">
               Storefront:{" "}
               <span className="font-medium">
-                {process.env.NEXT_PUBLIC_DON_BARATON_URL || "http://localhost:3001"}
+                {process.env.NEXT_PUBLIC_DON_BARATON_URL ||
+                  "https://www.donbaraton.shop"}
               </span>
             </p>
           </div>
