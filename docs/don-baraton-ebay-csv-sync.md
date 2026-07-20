@@ -48,11 +48,19 @@ Legacy aliases still read: `DON_BARATON_URL`, `DON_BARATON_SYNC_TOKEN`.
 
 ## Don Baratón env
 
+**Vercel project:** `don-baraton-front-en-d`  
+**GitHub repo:** `D2LE2/Don-Baraton-Front-EnD-`  
+**Production URL:** `https://www.donbaraton.shop`
+
 ```env
 HIGLOU_IMPORT_TOKEN=same-shared-secret
+SUPABASE_SERVICE_ROLE_KEY=required-for-service-import
 # optional alias:
 # DON_BARATON_IMPORT_TOKEN=same-shared-secret
 ```
+
+Do **not** configure Higlou sync on fork projects (`don-baraton-front-en-d-i12y`, etc.).
+Only `don-baraton-front-en-d` owns production + domain.
 
 ## Behavior
 
