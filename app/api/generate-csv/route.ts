@@ -26,6 +26,7 @@ import { enrichItemSpecificsForExport } from "@/lib/ebay/enrich-export-specifics
 import { requireUser } from "@/lib/auth/require-user";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
 import {
+  EBAY_CATEGORY_OPTIONS,
   isValidEbayCategoryId,
   resolveEbayCategory,
 } from "@/config/ebay-categories";
@@ -113,16 +114,21 @@ function resolveCategoryId(input: {
   brand?: string;
 }): { categoryId: string; categoryName: string } {
   const raw = (input.categoryId || "").trim();
+  // Only keep IDs that exist in Higlou's curated leaf list (same leaves Don Baratón seeds).
+  // Parent buckets like old "20704 Major Appliances" must re-resolve or Don Baratón skips the row.
   if (isValidEbayCategoryId(raw)) {
-    return {
-      categoryId: raw,
-      categoryName: input.categoryName || "",
-    };
+    const known = EBAY_CATEGORY_OPTIONS.find((option) => option.id === raw);
+    if (known) {
+      return {
+        categoryId: known.id,
+        categoryName: input.categoryName || known.name,
+      };
+    }
   }
   const hit = resolveEbayCategory({
     categoryId: "",
     categoryName: input.categoryName,
-    productType: input.productType || raw || undefined,
+    productType: input.productType || (!/^\d+$/.test(raw) ? raw : undefined),
     title: input.title,
     brand: input.brand,
   });

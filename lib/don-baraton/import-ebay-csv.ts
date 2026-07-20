@@ -66,30 +66,33 @@ export async function pushEbayCsvToDonBaraton(
       }
     }
 
-    if (!res.ok) {
+    if (!res.ok || body?.ok === false) {
       const message =
         body?.error ||
         body?.message ||
         (contentType.includes("text/html")
           ? `Don Baratón returned HTML ${res.status} — endpoint not deployed on that URL?`
           : `Don Baratón HTTP ${res.status}`);
-      console.error("[don-baraton import]", message);
+      console.error("[don-baraton import]", message, body?.summary);
       return { status: "error", message, httpStatus: res.status };
     }
 
-    if (!body || body.ok === false) {
+    const summary = body?.summary;
+    const created = Number(summary?.created || 0);
+    const updated = Number(summary?.updated || 0);
+    const errors = Number(summary?.errors || 0);
+    if (summary && created + updated === 0 && errors > 0) {
       const message =
-        body?.error ||
-        "Don Baratón returned a non-JSON success response (is production deployed?)";
-      console.error("[don-baraton import]", message);
-      return { status: "error", message, httpStatus: res.status };
+        "Don Baratón imported 0 products (check Category ID / taxonomy seed)";
+      console.error("[don-baraton import]", message, summary);
+      return { status: "error", message, httpStatus: 422 };
     }
 
     return {
       status: "ok",
-      batchId: body.batchId,
-      summary: body.summary,
-      message: body.message,
+      batchId: body?.batchId,
+      summary: body?.summary,
+      message: body?.message,
     };
   } catch (error) {
     const message =

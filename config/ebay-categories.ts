@@ -329,17 +329,42 @@ export const EBAY_CATEGORY_OPTIONS: EbayCategoryOption[] = [
     ],
   },
   {
-    id: "20704",
-    name: "Major Appliances",
+    id: "71262",
+    name: "Mini Fridges",
+    keywords: [
+      "mini fridge",
+      "minifridge",
+      "beverage cooler",
+      "compact fridge",
+      "retro mini fridge",
+      "dorm fridge",
+    ],
+  },
+  {
+    id: "20713",
+    name: "Refrigerators",
     keywords: [
       "refrigerator",
       "fridge",
       "freezer",
-      "washer",
-      "dryer",
-      "dishwasher",
-      "range oven",
+      "refrigerador",
+      "french door fridge",
     ],
+  },
+  {
+    id: "71256",
+    name: "Washing Machines",
+    keywords: ["washer", "washing machine", "lavadora"],
+  },
+  {
+    id: "71250",
+    name: "Ranges & Stoves",
+    keywords: ["range oven", "stove", "estufa", "range"],
+  },
+  {
+    id: "150140",
+    name: "Microwaves",
+    keywords: ["microwave", "microondas"],
   },
   {
     id: "79624",
