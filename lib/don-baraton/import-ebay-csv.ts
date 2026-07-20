@@ -1,5 +1,13 @@
 import { getDonBaratonConfig } from "@/lib/don-baraton/config";
 
+type DonBaratonImportResponse = {
+  ok?: boolean;
+  error?: string;
+  batchId?: string;
+  summary?: Record<string, number>;
+  message?: string;
+};
+
 export type DonBaratonImportResult =
   | {
       status: "ok";
@@ -49,16 +57,10 @@ export async function pushEbayCsvToDonBaraton(
 
     const contentType = res.headers.get("content-type") || "";
     const rawText = await res.text();
-    let body: {
-      ok?: boolean;
-      error?: string;
-      batchId?: string;
-      summary?: Record<string, number>;
-      message?: string;
-    } | null = null;
+    let body: DonBaratonImportResponse | null = null;
     if (contentType.includes("application/json")) {
       try {
-        body = JSON.parse(rawText) as typeof body;
+        body = JSON.parse(rawText) as DonBaratonImportResponse;
       } catch {
         body = null;
       }
